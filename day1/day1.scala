@@ -15,10 +15,18 @@ object State {
 
 class State(i: Int) {
   def +(x: Move) = x match
-    case LeftMove(steps) => {
+    case LeftMove(all_steps) => {
+      
+      val full_turns = (all_steps / 100).toInt
+      val steps = all_steps % 100
+      
+      State.zero_passes += full_turns
+      
       val new_i = (i - steps) % 100
       val ret = if (new_i < 0) {
-        State.zero_passes += (new_i / (-100)).toInt + 1
+        if(i > 0){
+          State.zero_passes += 1
+        }
         new_i + 100
       } else {
         new_i
@@ -27,24 +35,31 @@ class State(i: Int) {
 
       if (ret == 0) {
         State.zero_count += 1
+        State.zero_passes += 1
       }
-      println(ret)
       State(ret)
 
     }
-    case RightMove(steps) => {
-      val ret = (i + steps) % 100
+    case RightMove(all_steps) => {
+      val ret = (i + all_steps) % 100
 
-      State.zero_passes += ((i+steps) / 100).toInt
+      val full_turns = (all_steps / 100).toInt
+      val steps = all_steps % 100
+      
+      State.zero_passes += full_turns
+
+      if ( i + steps > 100) {
+        State.zero_passes += 1
+      }
 
       if (ret == 0) {
         State.zero_count += 1
+        State.zero_passes += 1
       }
-      println(ret)
       State(ret)
     }
 
-  override def toString(): String = s"zeroes: ${State.zero_count}; passes: ${State.zero_passes}"
+  override def toString(): String = s"Final zeroes: ${State.zero_count}; zero passes: ${State.zero_passes}"
 
 }
 
@@ -60,19 +75,15 @@ class Problem(filePath: String) {
         line match
           case Lpattern(steps) => LeftMove(steps.toInt)
           case Rpattern(steps) => RightMove(steps.toInt)
-          case _               => throw RuntimeException("aaaa")
+          case _               => throw RuntimeException(s"Failed to parse input line $line.")
       )
   }
 
   def solvePart1() = {
     val moves = parse()
     val state = State(50)
-    val final_state = moves.foldLeft(state)(_ + _)
-    final_state
+    moves.foldLeft(state)(_ + _)
   }
-
-  var fastForwarded: Boolean = false
-  val nrounds: Long = 1000000000
 
 }
 
@@ -83,7 +94,6 @@ object Day1 extends App {
 
   def process(filePath: String) = {
     println(Problem(filePath).solvePart1())
-    // println(Problem(filePath).solvePart2())
   }
 
   // process(testFile)
