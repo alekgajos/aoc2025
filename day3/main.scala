@@ -11,6 +11,8 @@ def memoize[I, O](f: I => O): I => O = new HashMap[I, O]() { self =>
 
 class Problem(filePath: String) {
 
+  val cache = new HashMap[(Array[Char], Int), Long]
+
   def findJoltage(input: Array[Char]): Int = {
 
     val battery = input.map(_.asDigit)
@@ -30,30 +32,39 @@ class Problem(filePath: String) {
       10 * first + rmax
   }
 
-  lazy val findJoltageDynamic: ((Array[Char], Int)) => Long = memoize {
-    // def findJoltageDynamic(input: Array[Char], k: Int): Long = {
-    case (input: Array[Char], k: Int) => {
+  def findJoltageDynamic(input: Array[Char], k: Int): Long = {
 
-      if (input.length < k) { 0 }
-      else if (k == 1 && input.length == 1) {
-        input(0).asDigit.toLong
-      } else if (k == 0) {
-        0
-      } else {
-
-        val range = 0 until (input.length - (k - 1))
-        range
-          .map(x => {
-            math.pow(10, k - 1).toLong * input(
-              x
-            ).asDigit.toLong + findJoltageDynamic(
-              input.slice(x + 1, input.length),
-              k - 1
-            )
-          })
-          .max
-      }
+    if (k == 12) {
+      cache.clear()
     }
+
+    cache.getOrElseUpdate(
+      (input, k), {
+
+        if (input.length < k) { 0 }
+        else if (k == 1 && input.length == 1) {
+          input(0).asDigit.toLong
+        } else if (k == 0) {
+          0
+        } else {
+
+          val range = 0 until (input.length - (k - 1))
+          val max_val = input.slice(0, input.length - (k - 1)).max
+
+          range
+            .filter(input(_) == max_val)
+            .map(x => {
+              math.pow(10, k - 1).toLong * input(
+                x
+              ).asDigit.toLong + findJoltageDynamic(
+                input.slice(x + 1, input.length),
+                k - 1
+              )
+            })
+            .max
+        }
+      }
+    )
   }
 
   def parse() = {
@@ -72,7 +83,6 @@ class Problem(filePath: String) {
   def solvePart2() = {
     val solutions: Seq[Long] =
       parse().map(findJoltageDynamic(_, 12)).toSeq
-    solutions.foreach(println(_))
     solutions.sum
   }
 
