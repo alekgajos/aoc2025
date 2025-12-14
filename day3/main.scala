@@ -32,39 +32,32 @@ class Problem(filePath: String) {
       10 * first + rmax
   }
 
-  def findJoltageDynamic(input: Array[Char], k: Int): Long = {
+  lazy val findJoltageDynamic: ((Array[Char], Int)) => Long = memoize {
+    case (input: Array[Char], k: Int) => {
+      if (input.length < k) { 0 }
+      else if (k == 1 && input.length == 1) {
+        input(0).asDigit.toLong
+      } else if (k == 0) {
+        0
+      } else {
 
-    if (k == 12) {
-      cache.clear()
-    }
+        val range = 0 until (input.length - (k - 1))
+        val max_val = input.slice(0, input.length - (k - 1)).max
 
-    cache.getOrElseUpdate(
-      (input, k), {
-
-        if (input.length < k) { 0 }
-        else if (k == 1 && input.length == 1) {
-          input(0).asDigit.toLong
-        } else if (k == 0) {
-          0
-        } else {
-
-          val range = 0 until (input.length - (k - 1))
-          val max_val = input.slice(0, input.length - (k - 1)).max
-
-          range
-            .filter(input(_) == max_val)
-            .map(x => {
-              math.pow(10, k - 1).toLong * input(
-                x
-              ).asDigit.toLong + findJoltageDynamic(
-                input.slice(x + 1, input.length),
-                k - 1
-              )
-            })
-            .max
-        }
+        range
+          .filter(input(_) == max_val)
+          .map(x => {
+            math.pow(10, k - 1).toLong * input(
+              x
+            ).asDigit.toLong + findJoltageDynamic(
+              input.slice(x + 1, input.length),
+              k - 1
+            )
+          })
+          .max
       }
-    )
+
+    }
   }
 
   def parse() = {
