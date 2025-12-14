@@ -2,8 +2,12 @@
 
 package day3
 
-
 import scala.io.Source
+import scala.collection.mutable.HashMap
+
+def memoize[I, O](f: I => O): I => O = new HashMap[I, O]() { self =>
+  override def apply(key: I) = self.synchronized(getOrElseUpdate(key, f(key)))
+}
 
 class Problem(filePath: String) {
 
@@ -16,14 +20,40 @@ class Problem(filePath: String) {
     val first_pos = battery.indexOf(first)
 
     val left = battery.slice(0, first_pos)
-    val right = battery.slice(first_pos+1, battery.length)
+    val right = battery.slice(first_pos + 1, battery.length)
 
     if right.length == 0 then
       val lmax = left.max
-      10*lmax + first
+      10 * lmax + first
     else
       val rmax = right.max
-      10*first + rmax
+      10 * first + rmax
+  }
+
+  lazy val findJoltageDynamic: ((Array[Char], Int)) => Long = memoize {
+    // def findJoltageDynamic(input: Array[Char], k: Int): Long = {
+    case (input: Array[Char], k: Int) => {
+
+      if (input.length < k) { 0 }
+      else if (k == 1 && input.length == 1) {
+        input(0).asDigit.toLong
+      } else if (k == 0) {
+        0
+      } else {
+
+        val range = 0 until (input.length - (k - 1))
+        range
+          .map(x => {
+            math.pow(10, k - 1).toLong * input(
+              x
+            ).asDigit.toLong + findJoltageDynamic(
+              input.slice(x + 1, input.length),
+              k - 1
+            )
+          })
+          .max
+      }
+    }
   }
 
   def parse() = {
@@ -40,7 +70,10 @@ class Problem(filePath: String) {
   }
 
   def solvePart2() = {
-    ()
+    val solutions: Seq[Long] =
+      parse().map(findJoltageDynamic(_, 12)).toSeq
+    solutions.foreach(println(_))
+    solutions.sum
   }
 
 }
@@ -49,7 +82,7 @@ class Problem(filePath: String) {
 
   def process(filePath: String) = {
     println(Problem(filePath).solvePart1())
-    // println(Problem(filePath).solvePart2())
+    println(Problem(filePath).solvePart2())
   }
 
   process(input)
