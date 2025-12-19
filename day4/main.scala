@@ -8,10 +8,6 @@ import java.lang.Math.sqrt
 import scala.runtime.stdLibPatches.language.`3.0`
 import scala.collection.mutable.ListBuffer
 
-def memoize[I, O](f: I => O): I => O = new HashMap[I, O]() { self =>
-  override def apply(key: I) = self.synchronized(getOrElseUpdate(key, f(key)))
-}
-
 case class Vec(x: Int, y: Int) {
 
   def *(other: Vec) = x * other.x + y * other.y
@@ -34,11 +30,6 @@ case class Vec(x: Int, y: Int) {
 case class Position(x: Int, y: Int) {
   def +(v: Vec) = Position(x + v.x, y + v.y)
 }
-
-sealed trait PositionType;
-case class Internal() extends PositionType;
-case class Edge() extends PositionType;
-case class Corner() extends PositionType;
 
 case class Matrix[T](M: Array[Array[T]]) {
 
@@ -71,21 +62,6 @@ case class Matrix[T](M: Array[Array[T]]) {
     }
   }
 
-  def positionType(x: Int, y: Int): PositionType = {
-
-    val v_edge = (x == 0 || x == width - 1)
-    val h_edge = (y == 0 || y == height - 1)
-
-    if (v_edge && h_edge) {
-      Corner()
-    } else if (v_edge || h_edge) {
-      Edge()
-    } else {
-      Internal()
-    }
-
-  }
-
   def neighbours(i: Int, j: Int) = for {
     ii <- i - 1 to i + 1
     jj <- j - 1 to j + 1
@@ -107,8 +83,6 @@ class Problem(filePath: String) {
   }
 
   def solvePart1() = {
-
-    val M = Matrix(parse())
 
     val nodes = for {
       i <- 0 until M.height
