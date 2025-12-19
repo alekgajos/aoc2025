@@ -5,6 +5,8 @@ package day4
 import scala.io.Source
 import scala.collection.mutable.HashMap
 import java.lang.Math.sqrt
+import scala.runtime.stdLibPatches.language.`3.0`
+import scala.collection.mutable.ListBuffer
 
 def memoize[I, O](f: I => O): I => O = new HashMap[I, O]() { self =>
   override def apply(key: I) = self.synchronized(getOrElseUpdate(key, f(key)))
@@ -38,7 +40,7 @@ case class Internal() extends PositionType;
 case class Edge() extends PositionType;
 case class Corner() extends PositionType;
 
-case class Matrix[T](M: List[List[T]]) {
+case class Matrix[T](M: Array[Array[T]]) {
 
   lazy val width = M.head.length
   lazy val height = M.length
@@ -60,6 +62,14 @@ case class Matrix[T](M: List[List[T]]) {
   }
 
   def apply(pos: Position): Option[T] = apply(pos.x, pos.y)
+
+  def update(x: Int, y: Int)(value: T) = {
+    if (y >= 0 && y < M.length) {
+      if (x >= 0 && x < M(y).length) {
+        M(x)(y) = value
+      }
+    }
+  }
 
   def positionType(x: Int, y: Int): PositionType = {
 
@@ -86,12 +96,14 @@ case class Matrix[T](M: List[List[T]]) {
 
 class Problem(filePath: String) {
 
+  val M = Matrix(parse())
+
   def parse() = {
     Source
       .fromFile(filePath)
       .getLines()
-      .map(_.toCharArray().toList)
-      .toList
+      .map(_.toCharArray().toArray)
+      .toArray
   }
 
   def solvePart1() = {
@@ -115,8 +127,40 @@ class Problem(filePath: String) {
 
   }
 
+  def removalRound() = {
+
+    val nodes = for {
+      i <- 0 until M.height
+      j <- 0 until M.width
+    } yield (i, j)
+
+    val removed = nodes.map {
+      case (i, j) => {
+        M(i, j) match
+          case Some('@') => {
+            if (M.neighbours(i, j).count(_ == '@') < 4) {
+              M.update(j, i)('X')
+              1
+            } else {
+              0
+            }
+          }
+          case _ => 0
+      }
+    }
+    removed.sum
+  }
+
   def solvePart2() = {
-    43
+
+    var counts = ListBuffer[Int]()
+
+    var k = removalRound()
+    while (k > 0) {
+      counts += k
+      k = removalRound()
+    }
+    counts.sum
   }
 
 }
